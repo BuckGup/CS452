@@ -50,9 +50,29 @@ public:
         age = 0;
     };
 
+    Job(string line) {
+        nextJob = NULL;
+        prevJob = NULL;
+        age = 0;
+        char *tok;
+        char char_array[99];
+        strcpy(char_array, line.c_str());
+
+        tok = strtok(char_array, "\t");
+        setPid(stoi(tok));
+
+        tok = strtok(NULL, "\t");
+        setBurst(stoi(tok));
+
+        tok = strtok(NULL, "\t");
+        setArrival(stoi(tok));
+
+        tok = strtok(NULL, "\t");
+        setPriority(stoi(tok));
+    }
+
     void printJob();
 };
-
 
 void Job::printJob() {
     cout << "This is the PID";
@@ -76,8 +96,11 @@ void Job::setPriority(int priority) {
     Job::priority = priority;
 };
 
-int main() {
+string getJob(ifstream &, int);
 
+Job *jobFill(string);
+
+int main() {
     char *tok;
     Job *prevJob = nullptr;
     Job *currentJob = nullptr;
@@ -85,26 +108,27 @@ int main() {
     Job *myJob = nullptr;
 
     char fileDirectory[99];
-    int numQ;
-    int timeQuantum;
-    int ageInterval;
-    char char_array[99];
+    int numQ = 0;
+    int timeQuantum = 0;
+    int ageInterval = 0;
     char tempArray[40];
     int clockCycle = 0;
     int totalJobCount = 0;
-
+    int totalWaitTime = 0;
+    int totalTurnaroundTime = 0;
+    int totalProcesses = 0;
 
     printf("\nEnter the test file directory:\t");
     scanf("%s", &fileDirectory);
 
     printf("Enter the number of queues:\t");
-    scanf("%d", numQ);
+    scanf("%d", &numQ);
 
     printf("Enter time quantum for top queue:\t");
-    scanf("%d", timeQuantum);
+    scanf("%d", &timeQuantum);
 
     printf("Enter ageing interval:\t");
-    scanf("%d", ageInterval);
+    scanf("%d", &ageInterval);
 
     int q1Time = timeQuantum;
     int q2Time = q1Time * 2;
@@ -120,7 +144,6 @@ int main() {
 
     string line;
     ifstream myfile("1M.sorted");
-    streampos oldpos;
 
 
     //Check top newJob.next pointer = current
@@ -131,129 +154,154 @@ int main() {
     // const char * c = str.c_str();
 
 
-    if (myfile.is_open()) {
-        getline(myfile, line);
+    while (true) {
 
-        oldpos = myfile.tellg();   // get back to the position
-        while (getline(myfile, line) && !line.empty()) {
+        string tempJob;
 
-            strcpy(char_array, line.c_str());
-            if (strchr(char_array, '-') != NULL) {
-                continue;
+        tempJob = getJob(myfile, clockCycle);
+
+        while (!tempJob.empty()) {
+            // cout << tempJob.c_str() << " ";
+            //cout << clockCycle << endl;
+            myJob = new Job(tempJob);
+
+            cout << tempJob << endl;
+            cout << myJob->getArrival() << " " << clockCycle << endl;
+
+            if (clockCycle == 100) {
+                exit(0);
             }
 
-            myJob = new Job();
+            tempJob = getJob(myfile, clockCycle);
 
-            tok = strtok(char_array, "\t");
-            myJob->setPid(stoi(tok));
-            //cout << myJob->getPid() << " ";
+        }
+        clockCycle++;
 
-            tok = strtok(NULL, "\t");
-            myJob->setBurst(stoi(tok));
-            //cout << myJob->getBurst() << " ";
-
-            tok = strtok(NULL, "\t");
-            myJob->setArrival(stoi(tok));
-            //cout << myJob->getArrival() << " ";
-
-            tok = strtok(NULL, "\t");
-            myJob->setPriority(stoi(tok));
-            //cout << myJob->getPriority() << " " << endl;
+    }
 
 
 
-            //@todo THIS
-            while (myJob->nextJob != NULL) {
-                //goes until the end of the file
+    /*     if (topJob == NULL) {
+             //first element in list
+             topJob = myJob;
+             currentJob = myJob;
+             prevJob = myJob;
 
-                if (currentJob->getArrival() == myJob->nextJob->getArrival()) {
+         } else {
+             currentJob = topJob;
+             prevJob = topJob;
 
-                    if (currentJob->getPriority() > myJob->nextJob->getPriority()) {
+             while (currentJob->getArrival() < myJob->getArrival() && currentJob->nextJob != NULL) {
+                 prevJob = currentJob;
+                 currentJob = currentJob->nextJob;
+             }
 
-                        //Check if Q1 is full and Qs afterwards
-                        //point current Job to end of open Q
-
-                    } else {
-
-                        //Check if Q1 is full and Qs afterwards
-                        //point nextJob to end of open Q
-
-                    }
-
-
-                } else {
-
-
-                }
-
-                clockCycle++;
-            }
-
-
-            /*     if (topJob == NULL) {
-                     //first element in list
-                     topJob = myJob;
-                     currentJob = myJob;
-                     prevJob = myJob;
-
+             if (currentJob == topJob) {
+                 //end
+                 if (currentJob->nextJob == NULL) {
+                     currentJob->nextJob = myJob;
                  } else {
-                     currentJob = topJob;
-                     prevJob = topJob;
-
-                     while (currentJob->getArrival() < myJob->getArrival() && currentJob->nextJob != NULL) {
-                         prevJob = currentJob;
-                         currentJob = currentJob->nextJob;
-                     }
-
-                     if (currentJob == topJob) {
-                         //end
-                         if (currentJob->nextJob == NULL) {
-                             currentJob->nextJob = myJob;
-                         } else {
-                             //front
-                             topJob = myJob;
-                             myJob->nextJob = currentJob;
-                             // cout << "if " << myJob->getArrival() << endl;
-                         }
-
-                     } else if (currentJob->nextJob == NULL) {
-                         //if last element
-                         currentJob->nextJob = myJob;
-                         //  cout << "else if " << myJob->getArrival() << endl;
-
-                     } else {
-                         //handles case for NULL
-                         prevJob->nextJob = myJob;
-                         myJob->nextJob = currentJob;
-                         // cout << "Prev Job:" << prevJob->getArrival() << " ";
-                         // cout << "Current Job: " << currentJob->getArrival() << " ";
-                         // cout << "Top Job: " << topJob->getArrival() << " ";
-                         // cout << "My Job: " << myJob->getArrival() << " " << endl;
-                     }
-
+                     //front
+                     topJob = myJob;
+                     myJob->nextJob = currentJob;
+                     // cout << "if " << myJob->getArrival() << endl;
                  }
 
-                 */
+             } else if (currentJob->nextJob == NULL) {
+                 //if last element
+                 currentJob->nextJob = myJob;
+                 //  cout << "else if " << myJob->getArrival() << endl;
 
-            oldpos = myfile.tellg();   // get back to the position
-        }
+             } else {
+                 //handles case for NULL
+                 prevJob->nextJob = myJob;
+                 myJob->nextJob = currentJob;
+                 // cout << "Prev Job:" << prevJob->getArrival() << " ";
+                 // cout << "Current Job: " << currentJob->getArrival() << " ";
+                 // cout << "Top Job: " << topJob->getArrival() << " ";
+                 // cout << "My Job: " << myJob->getArrival() << " " << endl;
+             }
 
-        myfile.close();
-
-        remove("1M.sorted");
-
-
-        /* currentJob = topJob;
-        while (currentJob != NULL) {
-            cout << currentJob->getArrival() << "-";
-            currentJob = currentJob->nextJob;
-        }
+         }
 
          */
 
-    } else {
-        cout << "Wrong file";
-    }
+
+    myfile.close();
+
+    remove("1M.sorted");
 
     return 0;
+}
+
+string getJob(ifstream &myfile, int currentTime) {
+    char char_array[99];
+    char *PID;
+    char *Burst;
+    char *Arrival;
+    string line;
+    streampos oldpos;
+
+
+    if (myfile.is_open()) {
+
+        do {
+            oldpos = myfile.tellg();   // get back to the position
+            getline(myfile, line);
+
+            strcpy(char_array, line.c_str());
+
+            if (strchr(char_array, '-') != NULL || strchr(char_array, 'i')) {
+                continue;
+            }
+
+            PID = strtok(char_array, "\t");
+            Burst = strtok(NULL, "\t");
+            Arrival = strtok(NULL, "\t");
+
+            if (stoi(Arrival) == currentTime) {
+                return line;
+            } else {
+                myfile.seekg(oldpos);
+                return "";
+            }
+
+
+        } while (!line.empty());
+
+
+        /*while (getline(myfile, line) && !line.empty()) {
+            strcpy(char_array, line.c_str());
+            if (strchr(char_array, '-') != NULL || strchr(char_array, 'i')) {
+                oldpos = myfile.tellg();
+                continue;
+            }
+
+
+            PID = strtok(char_array, "\t");
+            Burst = strtok(NULL, "\t");
+            Arrival = strtok(NULL, "\t");
+
+            if(stoi(Arrival) == currentTime){
+                return line;
+            }
+
+            else{
+                myfile.seekg (oldpos);
+                return NULL;
+            }
+
+        }*/
+
+
+        //compare it to clockCycle
+        //if clockCycle = arrivalTime
+
+        //then return the string of the line
+
+        //else go back one job
+
+        //return NULL
+
+    }
 }
