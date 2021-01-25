@@ -1,0 +1,730 @@
+//MFQS Made by Sam Strecker 1/24/21
+
+#include<stdio.h>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <cstdlib>
+#include <cstring>
+
+using namespace std;
+
+class Job {
+public:
+    int PID;
+    int burst;
+    int arrival;
+    Job *nextJob;
+
+    Job *getNextJob() const;
+
+    void setNextJob(Job *nextJob);
+
+    int age;
+    int startTime;
+    int workRemaining;
+
+    int getAge() const;
+
+    void setAge(int age);
+
+    int getStartTime() const;
+
+    void setStartTime(int startTime);
+
+    int getWorkRemaining() const;
+
+    void setWorkRemaining(int workRemaining);
+
+    void setPid(int pid);
+
+    void setBurst(int burst);
+
+    void setArrival(int arrival);
+
+    void setPriority(int priority);
+
+    int priority;
+
+    int getPid() const {
+        return PID;
+    }
+
+    int getBurst() const {
+        return burst;
+    }
+
+    int getArrival() const {
+        return arrival;
+    }
+
+    int getPriority() const {
+        return priority;
+    }
+
+    Job() {
+        nextJob = NULL;
+        age = 0;
+    };
+
+    Job(string line) {
+        nextJob = NULL;
+        char *tok;
+        char char_array[99];
+        setStartTime(-1);
+        setWorkRemaining(-1);
+        setAge(0);
+
+        strcpy(char_array, line.c_str());
+
+        tok = strtok(char_array, "\t");
+        setPid(stoi(tok));
+
+        tok = strtok(NULL, "\t");
+        setBurst(stoi(tok));
+
+        tok = strtok(NULL, "\t");
+        setArrival(stoi(tok));
+
+        tok = strtok(NULL, "\t");
+        setPriority(stoi(tok));
+    }
+
+    void printJob();
+};
+
+void Job::printJob() {
+    cout << "This is the PID";
+    cout << this->PID;
+    cout << endl;
+}
+
+void Job::setPid(int pid) {
+    PID = pid;
+}
+
+void Job::setBurst(int burst) {
+    Job::burst = burst;
+}
+
+void Job::setArrival(int arrival) {
+    Job::arrival = arrival;
+}
+
+void Job::setPriority(int priority) {
+    Job::priority = priority;
+}
+
+int Job::getAge() const {
+    return age;
+}
+
+void Job::setAge(int age) {
+    Job::age = age;
+}
+
+int Job::getStartTime() const {
+    return startTime;
+}
+
+void Job::setStartTime(int startTime) {
+    Job::startTime = startTime;
+}
+
+int Job::getWorkRemaining() const {
+    return workRemaining;
+}
+
+void Job::setWorkRemaining(int workRemaining) {
+    Job::workRemaining = workRemaining;
+}
+
+Job *Job::getNextJob() const {
+    return nextJob;
+}
+
+void Job::setNextJob(Job *nextJob) {
+    Job::nextJob = nextJob;
+};
+
+string getJob(ifstream &, int);
+
+Job *jobFill(string);
+
+Job *dispatcher(Job *, Job *);
+
+int checkActiveJobs(Job *, int);
+
+void demote(Job *&, Job *&, int);
+
+void deleteJob(Job *&, int, int &, int &, int &);
+
+Job *promoteJob(Job *&, Job *&, int, int);
+
+void printQueue(Job *, string);
+
+void makeGant(Job *, Job *, Job *, Job *, Job *);
+
+
+int main() {
+    char *tok;
+    Job *currentJob = nullptr;
+    Job *topJob = nullptr;
+    Job *myJob = nullptr;
+    Job *Q1 = nullptr;
+    Job *Q2 = nullptr;
+    Job *Q3 = nullptr;
+    Job *Q4 = nullptr;
+    Job *QF = nullptr;
+    char fileDirectory[99];
+    int numQ = 0;
+    int timeQuantum = 0;
+    //int ageInterval = 0;
+    char tempArray[99];
+    int clockCycle = 0;
+    int totalWaitTime = 0;
+    int totalTurnaroundTime = 0;
+    int totalProcess = 0;
+    int workToDo = 0;
+    int quantumClock = 0;
+    int myAge = 0;
+
+    printf("\nEnter the test file directory:\t");
+    scanf("%s", fileDirectory);
+
+    printf("Enter the number of queues:\t");
+    scanf("%d", &numQ);
+
+    printf("Enter time quantum for top queue:\t");
+    scanf("%d", &timeQuantum);
+
+    printf("Enter ageing interval:\t");
+    scanf("%d", &myAge);
+
+    //printf("Enter ageing interval:\t");
+    // scanf("%d", &TEST);
+
+
+    sprintf(tempArray, "sort -g -k 3,3 %s > 1M.sorted", fileDirectory);
+
+    system(tempArray); // execute the UNIX command "sort"
+
+    string line;
+    ifstream myfile("1M.sorted");
+
+    //Check top newJob.next pointer = current
+    //Previous job = new job if current job is greater than previous
+    //If current is smaller than newJob and next job is NULL then add on end
+
+
+    quantumClock = timeQuantum;
+    while (true) {
+
+        string tempJob;
+        Job *currentJob;
+
+        tempJob = getJob(myfile, clockCycle);
+        //Read in scheduled jobs from file
+        while (!tempJob.empty()) {
+            myJob = new Job(tempJob);
+            Q1 = dispatcher(Q1, myJob);
+            // makeGant(Q1, Q2, Q3, Q4, QF);
+
+            if (!myfile.eof()) {
+                tempJob = getJob(myfile, clockCycle);
+            }
+        }
+
+        if (QF != NULL || QF != nullptr) {
+            //Call the function to check if the age is past the interval and traverse across all elements in FCFS
+            if (numQ == 2) {
+                currentJob = Q1;
+                currentJob = promoteJob(QF, currentJob, clockCycle, myAge);
+                //makeGant(Q1, Q2, Q3, Q4, QF);
+
+            } else if (numQ == 3) {
+                currentJob = Q2;
+                currentJob = promoteJob(QF, currentJob, clockCycle, myAge);
+                // makeGant(Q1, Q2, Q3, Q4, QF);
+
+            } else if (numQ == 4) {
+                currentJob = Q3;
+                currentJob = promoteJob(QF, currentJob, clockCycle, myAge);
+                //makeGant(Q1, Q2, Q3, Q4, QF);
+
+            } else if (numQ == 5) {
+                currentJob = Q4;
+                currentJob = promoteJob(QF, currentJob, clockCycle, myAge);
+                // makeGant(Q1, Q2, Q3, Q4, QF);
+
+            } else {
+                cerr << "Queue out of bounds" << endl;
+            }
+
+        }
+
+
+
+        //Check status of jobs
+        if (Q1 != nullptr || Q1 != NULL) {
+            workToDo = checkActiveJobs(Q1, clockCycle);
+            quantumClock--;
+
+            if (workToDo == 0) {
+                deleteJob(Q1, clockCycle, totalProcess, totalWaitTime, totalTurnaroundTime);
+                //makeGant(Q1, Q2, Q3, Q4, QF);
+
+                quantumClock = timeQuantum;
+
+            } else {
+                if (quantumClock == 0) {
+                    if (numQ == 2) {
+                        demote(Q1, QF, clockCycle);
+                        // makeGant(Q1, Q2, Q3, Q4, QF);
+
+                    } else {
+                        demote(Q1, Q2, clockCycle);
+                        //  makeGant(Q1, Q2, Q3, Q4, QF);
+
+                    }
+                    //demote2(Q1, Q1, Q2, Q3, Q4, QF, clockCycle, numQ);
+                    quantumClock = timeQuantum;
+                }
+            }
+
+
+        } else if (Q2 != nullptr || Q2 != NULL) {
+            workToDo = checkActiveJobs(Q2, clockCycle);
+            quantumClock--;
+            if (workToDo == 0) {
+                deleteJob(Q2, clockCycle, totalProcess, totalWaitTime, totalTurnaroundTime);
+                //makeGant(Q1, Q2, Q3, Q4, QF);
+
+                quantumClock = timeQuantum * 2;
+
+            } else {
+                if (quantumClock == 0) {
+                    if (numQ == 3) {
+                        demote(Q2, QF, clockCycle);
+                        //  makeGant(Q1, Q2, Q3, Q4, QF);
+
+                    } else {
+                        demote(Q2, Q3, clockCycle);
+                        //  makeGant(Q1, Q2, Q3, Q4, QF);
+
+                    }
+                    // demote(Q1, Q2, clockCycle);
+                    // demote2(Q2, Q1, Q2, Q3, Q4, QF, clockCycle, numQ);
+                    quantumClock = timeQuantum;
+                }
+            }
+
+
+        } else if (Q3 != nullptr || Q3 != NULL) {
+            workToDo = checkActiveJobs(Q3, clockCycle);
+            quantumClock--;
+            if (workToDo == 0) {
+                deleteJob(Q3, clockCycle, totalProcess, totalWaitTime, totalTurnaroundTime);
+                // makeGant(Q1, Q2, Q3, Q4, QF);
+
+                quantumClock = timeQuantum * 4;
+
+            } else {
+                if (quantumClock == 0) {
+                    if (numQ == 3) {
+                        demote(Q3, QF, clockCycle);
+                        //  makeGant(Q1, Q2, Q3, Q4, QF);
+
+                    } else {
+                        demote(Q3, Q4, clockCycle);
+                        //   makeGant(Q1, Q2, Q3, Q4, QF);
+
+                    }
+                    quantumClock = timeQuantum;
+                }
+            }
+
+        } else if (Q4 != nullptr || Q4 != NULL) {
+            workToDo = checkActiveJobs(Q4, clockCycle);
+            quantumClock--;
+            if (workToDo == 0) {
+                deleteJob(Q4, clockCycle, totalProcess, totalWaitTime, totalTurnaroundTime);
+                // makeGant(Q1, Q2, Q3, Q4, QF);
+
+                quantumClock = timeQuantum * 8;
+
+            } else {
+                if (quantumClock == 0) {
+                    if (numQ == 4) {
+                        demote(Q4, QF, clockCycle);
+                        //    makeGant(Q1, Q2, Q3, Q4, QF);
+
+                    }
+                    quantumClock = timeQuantum;
+                }
+            }
+
+
+        } else if (QF != nullptr || QF != NULL) {
+            workToDo = checkActiveJobs(QF, clockCycle);
+            quantumClock = timeQuantum;
+            if (workToDo == 0) {
+                deleteJob(QF, clockCycle, totalProcess, totalWaitTime, totalTurnaroundTime);
+                //makeGant(Q1, Q2, Q3, Q4, QF);
+
+            }
+
+
+        } else {
+            double aveWaitTime = totalWaitTime / totalProcess;
+            double aveTurnaroundTime = totalTurnaroundTime / totalProcess;
+
+            cout << "Ave. wait time= " << aveWaitTime << " Ave. turnaround time = " << aveTurnaroundTime
+                 << " Total processes scheduled = " << totalProcess << endl;
+
+            myfile.close();
+            remove("1M.sorted");
+            exit(0);
+        }
+        clockCycle++;
+
+    }
+
+
+}
+
+string getJob(ifstream &myfile, int currentTime) {
+    char char_array[99];
+    char *PID;
+    char *Burst;
+    char *Arrival;
+    string line;
+    streampos oldpos;
+
+    if (myfile.is_open()) {
+
+        do {
+            oldpos = myfile.tellg();   // get back to the position
+            getline(myfile, line);
+            if (myfile.eof() || line.empty()) {
+                return "";
+            }
+            strcpy(char_array, line.c_str());
+            if (strchr(char_array, '-') != NULL || strchr(char_array, 'i')) {
+                continue;
+            }
+            PID = strtok(char_array, "\t");
+            Burst = strtok(NULL, "\t");
+            Arrival = strtok(NULL, "\t");
+            if (stoi(Arrival) == currentTime) {
+                return line;
+            } else {
+                myfile.seekg(oldpos);
+                return "";
+            }
+        } while (!myfile.eof() && !line.empty());
+    }
+    //return "";
+}
+
+Job *dispatcher(Job *myQ, Job *myJob) {
+    Job *tempPointer = myQ;
+
+    //Check for if Que is empty
+    if (myQ == nullptr) {
+        myQ = myJob;
+
+        myQ->nextJob = nullptr;
+        //myQ->nextJob = Qa;
+        //changed ^^
+        cout << "Process " << myJob->getPid() << ":" << " arrives @ " << myJob->getArrival() << endl;
+
+    } else {
+
+        while (tempPointer->nextJob != nullptr) {
+            //chnaged ^^
+            tempPointer = tempPointer->nextJob;
+        }
+
+
+        tempPointer->nextJob = myJob;
+        //myJob->nextJob = myQ;
+        myJob->nextJob = nullptr;
+        //changed ^^
+        cout << "Process " << myJob->getPid() << ":" << " arrives @ " << myJob->getArrival() << endl;
+    }
+    return myQ;
+}
+
+int checkActiveJobs(Job *Qa, int clockCycle) {
+
+    if (Qa == nullptr || Qa == NULL) {
+        return 0;
+    } else {
+        if (Qa->getStartTime() == -1) {
+            Qa->setWorkRemaining(Qa->getBurst());
+            //start job
+            Qa->setStartTime(clockCycle);
+            return Qa->getBurst();
+        } else {
+            Qa->setWorkRemaining(Qa->getWorkRemaining() - 1);
+            return Qa->getWorkRemaining();
+        }
+    }
+
+    return 0;
+}
+
+void demote(Job *&Qa, Job *&Qb, int clockCycle) {
+    Job *tempPtrQa = nullptr;
+    tempPtrQa = Qa;
+    Job *tempPtrQb = nullptr;
+    tempPtrQb = Qb;
+
+    while (tempPtrQa->nextJob != nullptr) {
+        //while (tempPtrQa->nextJob != Qa) {
+        //changed ^^
+        tempPtrQa = tempPtrQa->nextJob;
+    }
+    if (Qb == nullptr || Qb == NULL) {
+        Qb = Qa;
+        Qa = Qa->nextJob;
+        //Qb->nextJob = Qb;
+        //changed ^^
+        Qb->nextJob = nullptr;
+//        if (tempPtrQa->nextJob == nullptr) {
+//            //f (tempPtrQa->nextJob == Qa) {
+//            //changed ^^
+//            Qa = nullptr;
+//        } else {
+//            Qa = Qa->nextJob;
+//        }
+
+        cout << Qb->getPid() << " switched @ " << clockCycle << endl;
+
+    } else {
+        //if last element in Q1
+        while (tempPtrQb->nextJob != nullptr) {
+            //while (tempPtrQb->nextJob != Qb) {
+            //changed ^^
+            tempPtrQb = tempPtrQb->nextJob;
+        }
+//        tempPtrQa->nextJob = Qa->nextJob;
+//        tempPtrQb->nextJob = Qa;
+//        Qa->nextJob = Qb;
+        //changed ^^
+
+        tempPtrQb->nextJob = Qa;
+        Qa = Qa->nextJob;
+        cout << tempPtrQb->nextJob->getPid() << " switched @ " << clockCycle << endl;
+        tempPtrQb->nextJob->nextJob = nullptr;
+
+        //Qb->nextJob = Qb->nextJob;
+
+    }
+
+}
+
+void deleteJob(Job *&Qa, int clockCycle, int &totalProcess, int &totalWaitTime, int &totalTurnaroundTime) {
+    Job *tempPtr = nullptr;
+    tempPtr = Qa;
+
+//    while (tempPtr->nextJob != nullptr) {
+//        //changed^^
+//        tempPtr = tempPtr->nextJob;
+//    }
+//    totalTurnaroundTime += (clockCycle - Qa->getStartTime());
+//    totalWaitTime += (Qa->getStartTime() - Qa->getArrival());
+//    totalProcess++;
+//    cout << Qa->getPid() << " finished @ " << clockCycle << endl;
+//
+//    //checks if last element and delete itself
+//    if (Qa->nextJob == Qa) {
+//        Qa = nullptr;
+//    } else {
+//        tempPtr->nextJob = Qa->nextJob;
+//        Qa = Qa->nextJob;
+//    }
+
+
+    totalTurnaroundTime += (clockCycle - Qa->getStartTime());
+    totalWaitTime += (Qa->getStartTime() - Qa->getArrival());
+    totalProcess++;
+    cout << Qa->getPid() << " finished @ " << clockCycle << endl;
+
+    Qa = Qa->nextJob;
+
+
+}
+
+Job *promoteJob(Job *&QF, Job *&Qb, int clockCycle, int ageInterval) {
+
+    Job *ptrQF = nullptr;
+    ptrQF = QF;
+
+    Job *ptrEndQb = nullptr;
+    ptrEndQb = Qb;
+
+    //finds the end of the Q above QF
+    while (ptrEndQb != nullptr) {
+        ptrEndQb = ptrEndQb->nextJob;
+    }
+
+    //Walks across the QF for each element
+    while (ptrQF->nextJob != nullptr) {
+        //checks each element to see if it's aged out
+        if (ptrQF->getAge() > ageInterval) {
+            ptrEndQb->nextJob = ptrQF;
+            return Qb;
+        }
+        ptrQF = ptrQF->nextJob;
+    }
+    return Qb;
+
+}
+
+
+//void promoteJob(Job *&QF, Job *&Qb, int clockCycle, int myAge) {
+//
+//    Job *tempPtrQF = nullptr;
+//    tempPtrQF = QF;
+//    Job *tempPtrQb = nullptr;
+//    tempPtrQb = Qb;
+//    Job *tempPtrQprev = nullptr;
+//    tempPtrQprev = QF;
+//
+//    //age increased by 1
+//    do {
+//        tempPtrQF->setAge(tempPtrQF->getAge() + 1);
+//        //  cout << tempPtrQF->getPid() << " age: " << tempPtrQF->getAge() << endl;
+//        tempPtrQF = tempPtrQF->nextJob;
+//    } while (tempPtrQF != NULL && tempPtrQF->nextJob != QF);
+//
+//    if (Qb == NULL || Qb == nullptr) {
+//        tempPtrQF = QF;
+//        while (tempPtrQF->nextJob != nullptr) {
+//            //changed ^^
+//            if (tempPtrQF->getAge() > myAge) {
+//                tempPtrQprev = tempPtrQF;
+//
+//                if (QF->nextJob == nullptr) {
+//                    Qb = QF;
+//                    Qb->nextJob = nullptr;
+//                    QF = nullptr;
+//                } else {
+//
+//                    if (tempPtrQF->nextJob = nullptr) {
+//                        Qb = tempPtrQF;
+//                        Qb->nextJob = nullptr;
+//                        QF = nullptr;
+//                    } else {
+//
+//                        while (tempPtrQprev->nextJob != tempPtrQF) {
+//                            tempPtrQprev = tempPtrQprev->nextJob;
+//                        }
+//                        Qb = tempPtrQF;
+//                        Qb->nextJob = nullptr;
+//                        tempPtrQprev->nextJob = tempPtrQF->nextJob;
+//                    }
+//                }
+//
+//                cout << Qb->getPid() << " promoted1 @ " << clockCycle << endl;
+//            }
+//            tempPtrQF = tempPtrQF->nextJob;
+//        }
+//    } else {
+//        tempPtrQb = Qb;
+//
+//        while (tempPtrQb->nextJob != nullptr) {
+//            //changed ^^
+//            tempPtrQb = tempPtrQb->nextJob;
+//            //end of Que above F
+//        }
+//
+//        //case when QF is one element
+//        if (QF->nextJob == nullptr) {
+//            tempPtrQb->nextJob = QF;
+//            QF->nextJob = nullptr;
+//            QF = nullptr;
+//        } else {
+//
+//            tempPtrQF = QF;
+//            while (tempPtrQF->nextJob != nullptr) {
+//                //changed
+//                if (tempPtrQF->getAge() > myAge) {
+//
+//                    tempPtrQprev = QF;
+//
+//                    if (QF->nextJob == nullptr) {
+//                        Qb = QF;
+//                        Qb->nextJob = nullptr;
+//                        QF = nullptr;
+//                    } else {
+//                        while (tempPtrQprev->nextJob != tempPtrQF) {
+//                            tempPtrQprev = tempPtrQprev->nextJob;
+//                        }
+//                        tempPtrQb = Qb;
+//
+//                        while (tempPtrQb->nextJob != nullptr) {
+//                            tempPtrQb = tempPtrQb->nextJob;
+//                        }
+//                        tempPtrQb->nextJob = tempPtrQF;
+//                        tempPtrQprev->nextJob = tempPtrQF->nextJob;
+//                        tempPtrQF->nextJob = nullptr;
+//
+//                        Qb = tempPtrQF;
+//                       Qb->nextJob = nullptr;
+//                        tempPtrQprev->nextJob = tempPtrQF->nextJob;
+//                    }
+//
+//
+//                while (tempPtrQprev->nextJob != tempPtrQF) {
+//                    tempPtrQprev = tempPtrQprev->nextJob;
+//                }
+//                //^^^ Find pointer prior to current Job promoted
+//                tempPtrQprev->nextJob = tempPtrQF->nextJob;
+//
+//                tempPtrQb->nextJob = tempPtrQF;
+//                tempPtrQF->nextJob = nullptr;
+//                // tempPtrQF = tempPtrQprev->nextJob;
+//                    cout << tempPtrQF->getPid() << " promoted2 @ " << clockCycle << endl;
+//                }
+//
+//                tempPtrQF = tempPtrQF->nextJob;
+//
+//            }
+//        }
+//
+//    }
+//}
+
+void makeGant(Job *Q1, Job *Q2, Job *Q3, Job *Q4, Job *QF) {
+
+    printQueue(Q1, "Q1");
+    printQueue(Q2, "Q2");
+    printQueue(Q3, "Q3");
+    printQueue(Q4, "Q4");
+    printQueue(QF, "QF");
+
+}
+
+void printQueue(Job *Q1, string QName) {
+    Job *tempPtr = Q1;
+
+    if (Q1 == nullptr) {
+    } else {
+
+        cout << QName << ":#";
+
+        while (tempPtr->nextJob != nullptr) {
+            cout << "#";
+            tempPtr = tempPtr->nextJob;
+        }
+        cout << endl;
+
+
+    }
+
+}
+
